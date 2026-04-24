@@ -349,12 +349,12 @@ function setConn(on) {
 }
 
 // ─── HELPERS ──────────────────────────────────────────────
-function get instructors() { return window._instructors || []; }
+function gi() { return window._instructors || []; }
 
 function filtered() {
   const q = (document.getElementById("searchInput")||{}).value?.toLowerCase()||"";
   const sortKey = (document.getElementById("sortKey")||{}).value||"name";
-  let arr = instructors.filter(i => {
+  let arr = gi().filter(i => {
     return (filterSubject==="전체"||i.subject===filterSubject) &&
            (filterStatus==="전체"||i.status===filterStatus) &&
            (!q||i.name?.includes(q)||i.subject?.includes(q)||(i.phone||"").includes(q)||(i.email||"").toLowerCase().includes(q));
@@ -384,7 +384,7 @@ function renderStats() {
   if(!bar) return;
   let html="";
   Object.entries(STATUS_CFG).forEach(([s,c])=>{
-    const cnt = instructors.filter(i=>i.status===s).length;
+    const cnt = gi().filter(i=>i.status===s).length;
     const active = filterStatus===s;
     html+=`<div class="stat-chip" onclick="toggleStatusFilter('${s}')"
       style="background:${active?c.bg:"var(--card)"};border-color:${active?c.color+"60":"var(--border)"};">
@@ -395,7 +395,7 @@ function renderStats() {
   });
   html+=`<div style="margin-left:auto;display:flex;align-items:center;gap:5px;flex-shrink:0;padding:0 8px;">
     <span style="font-size:12px;color:var(--dim);">전체</span>
-    <span style="font-size:18px;font-weight:700;color:#f1f5f9;font-family:'Space Mono',monospace;">${instructors.length}</span>
+    <span style="font-size:18px;font-weight:700;color:#f1f5f9;font-family:'Space Mono',monospace;">${gi().length}</span>
     <span style="font-size:12px;color:var(--dim);">명</span>
   </div>`;
   bar.innerHTML=html;
@@ -416,8 +416,8 @@ function renderBoard() {
   const list=filtered();
   let subjHtml=`<div class="subj-grid">`;
   SUBJECTS.forEach(s=>{
-    const total=instructors.filter(i=>i.subject===s).length;
-    const done=instructors.filter(i=>i.subject===s&&i.status==="섭외완료").length;
+    const total=gi().filter(i=>i.subject===s).length;
+    const done=gi().filter(i=>i.subject===s&&i.status==="섭외완료").length;
     const pct=total>0?Math.round((done/total)*100):0;
     subjHtml+=`<div class="card" style="padding:12px 14px;">
       <div style="font-size:11px;color:var(--dim);font-weight:600;margin-bottom:7px;">${s}</div>
@@ -511,8 +511,8 @@ function renderSearchView() {
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:28px;">`;
   SUBJECTS.forEach(subj=>{
     const queries=SEARCH_QUERIES[subj]||[];
-    const done=instructors.filter(i=>i.subject===subj&&i.status==="섭외완료").length;
-    const total=instructors.filter(i=>i.subject===subj).length;
+    const done=gi().filter(i=>i.subject===subj&&i.status==="섭외완료").length;
+    const total=gi().filter(i=>i.subject===subj).length;
     html+=`<div class="card" style="padding:14px 16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <span style="font-size:13px;font-weight:700;color:#f1f5f9;">${subj}</span>
@@ -594,7 +594,7 @@ function openForm(){
 }
 
 function openEdit(id){
-  const item=instructors.find(x=>x.id===id); if(!item)return;
+  const item=gi().find(x=>x.id===id); if(!item)return;
   editId=id;
   document.getElementById("formTitle").textContent="✏️ 강사 정보 수정";
   document.getElementById("f-name").value=item.name||"";
@@ -640,7 +640,7 @@ function saveForm(){
 // ─── DELETE ───────────────────────────────────────────────
 function openDelete(id){
   deleteId=id;
-  const item=instructors.find(x=>x.id===id);
+  const item=gi().find(x=>x.id===id);
   document.getElementById("delName").textContent=`"${item?.name}" 강사의 정보가 삭제됩니다.`;
   document.getElementById("delModal").style.display="flex";
 }
@@ -654,7 +654,7 @@ function confirmDelete(){
 // ─── CSV ──────────────────────────────────────────────────
 function exportCSV(){
   const headers=["이름","과목","연락처","이메일","컨택할 사람","경력","상태","우선순위","메모"];
-  const rows=instructors.map(i=>[i.name,i.subject,i.phone,i.email,i.contact,i.career,i.status,i.priority,i.memo].map(v=>`"${(v||"").replace(/"/g,'""')}"`).join(","));
+  const rows=gi().map(i=>[i.name,i.subject,i.phone,i.email,i.contact,i.career,i.status,i.priority,i.memo].map(v=>`"${(v||"").replace(/"/g,'""')}"`).join(","));
   const csv="\uFEFF"+[headers.join(","),...rows].join("\n");
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
