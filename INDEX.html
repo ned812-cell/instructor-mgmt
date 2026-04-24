@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>강사 섭외 관리</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- ✅ Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set, push, remove, update }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // ══════════════════════════════════════════════════
+  // 🔧 여기에 Firebase 설정값을 붙여넣으세요
+  // (또는 앱 우측 상단 ⚙️ Firebase 설정 버튼 사용)
+  // ══════════════════════════════════════════════════
+  const _hardcoded = {
+    apiKey:            "AIzaSyDbAg0u3z41sYlYKK6g1rU_czJFHhv3iPc",
+    authDomain:        "jusjks-a7d28.firebaseapp.com",
+    databaseURL:       "https://jusjks-a7d28-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:         "jusjks-a7d28",
+    storageBucket:     "jusjks-a7d28.firebasestorage.app",
+    messagingSenderId: "1073939079509",
+    appId:             "1:1073939079509:web:9d3b4dd374408f59208fdc",
+    measurementId:     "G-HNK79B0B2F"
+  };
+  const _saved = localStorage.getItem("firebase_config");
+  const firebaseConfig = _saved ? JSON.parse(_saved) : _hardcoded;
+  // ══════════════════════════════════════════════════
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+  const dbRef = ref(db, "instructors");
+
+  // Firebase → 앱으로 실시간 반영
+  onValue(dbRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      window._instructors = Object.entries(data).map(([id, val]) => ({ id, ...val }));
+    } else {
+      window._instructors = [];
+    }
+    if (window._appReady) window.render();
+    else window._instructors = window._instructors || [];
+  });
+
+  // 추가
+  window.fbAdd = (data) => push(dbRef, data);
+
+  // 수정
+  window.fbUpdate = (id, data) => update(ref(db, `instructors/${id}`), data);
+
+  // 삭제
+  window.fbDelete = (id) => remove(ref(db, `instructors/${id}`));
+
+  window._dbReady = true;
+  document.dispatchEvent(new Event("firebase-ready"));
+</script>
+
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#0a0f1a;--bg2:#0d1420;--card:#111827;--border:#1e293b;
+    --text:#e2e8f0;--muted:#94a3b8;--dim:#64748b;--faint:#334155;
+    --blue:#3b82f6;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444;
+  }
+  body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;}
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-track{background:var(--bg);}
+  ::-webkit-scrollbar-thumb{background:var(--faint);border-radius:2px;}
+  button{cursor:pointer;border:none;font-family:inherit;}
+  input,select,textarea{font-family:inherit;outline:none;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;}
+  .btn-primary{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;transition:opacity .2s;}
+  .btn-primary:hover{opacity:.85;}
+  .btn-ghost{background:transparent;color:var(--muted);padding:6px 12px;border-radius:6px;font-size:12px;transition:all .15s;border:1px solid var(--border);}
+  .btn-ghost:hover{background:var(--border);color:var(--text);}
+  .btn-danger{background:#2d0a0a;color:var(--red);border:1px solid #7f1d1d;padding:4px 10px;border-radius:6px;font-size:11px;}
+  .input-field{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;width:100%;transition:border-color .15s;}
+  .input-field:focus{border-color:var(--blue);}
+  .input-field::placeholder{color:#475569;}
+  .pill{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .15s;}
+  .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.5px;}
+  .hover-row:hover{background:#1a2332;}
+  @keyframes slideIn{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .animate-in{animation:slideIn .25s ease;}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:200;animation:fadeIn .2s;}
+  header{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg2);position:sticky;top:0;z-index:100;}
+  .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .stats-bar{padding:12px 24px;border-bottom:1px solid var(--border);display:flex;gap:8px;overflow-x:auto;flex-shrink:0;}
+  .stat-chip{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:10px;cursor:pointer;flex-shrink:0;transition:all .15s;border:1px solid var(--border);}
+  .filters{padding:12px 24px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  table{width:100%;border-collapse:collapse;}
+  th{padding:11px 14px;font-size:11px;color:var(--dim);font-weight:600;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);}
+  td{padding:11px 14px;border-bottom:1px solid #0f172a;font-size:13px;}
+  .board-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;}
+  .instr-card{padding:14px;cursor:pointer;transition:border-color .15s;}
+  .instr-card:hover{border-color:#334155;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  label.lbl{font-size:11px;color:var(--dim);font-weight:600;display:block;margin-bottom:5px;}
+  .prog-track{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+  .prog-fill{height:100%;border-radius:2px;transition:width .3s;}
+  .view-toggle{display:flex;gap:4px;background:var(--border);border-radius:8px;padding:3px;}
+  .vt-btn{padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;transition:all .15s;background:transparent;color:var(--dim);}
+  .vt-btn.active{background:var(--blue);color:#fff;}
+  .subj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:20px;}
+  #toast{position:fixed;bottom:24px;right:24px;z-index:300;display:none;}
+  .empty-col{border:1px dashed var(--border);border-radius:10px;padding:20px 0;text-align:center;color:var(--faint);font-size:12px;}
+  .btn-export{background:#0f2d0f;color:var(--green);border:1px solid #14532d;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;}
+  .btn-export:hover{background:#14532d;}
+  /* 실시간 연결 상태 표시 */
+  .conn-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;}
+  .conn-dot.on{background:#22c55e;box-shadow:0 0 6px #22c55e;}
+  .conn-dot.off{background:#ef4444;}
+  /* 설정 안내 배너 */
+  #setupBanner{background:#1a1000;border:1px solid #f59e0b50;border-radius:12px;padding:20px 24px;margin:20px 24px;display:none;}
+</style>
+</head>
+<body>
+
+<!-- 설정 안내 배너 (Firebase 미설정시 표시) -->
+<div id="setupBanner">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+    <span style="font-size:22px;">⚙️</span>
+    <span style="font-size:15px;font-weight:700;color:#f59e0b;">Firebase 설정이 필요합니다</span>
+  </div>
+  <div style="font-size:13px;color:#94a3b8;line-height:1.8;">
+    이 파일을 열면 <b style="color:#f1f5f9;">실시간 공유 기능</b>이 작동합니다.<br>
+    아래 <b style="color:#f1f5f9;">3단계</b>만 따라하시면 팀원 모두가 같은 데이터를 실시간으로 볼 수 있어요.
+  </div>
+  <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px;">
+    <div style="background:#0a0f1a;border:1px solid #1e293b;border-radius:8px;padding:12px 16px;">
+      <div style="font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:4px;">STEP 1 — Firebase 프로젝트 만들기</div>
+      <div style="font-size:12px;color:#64748b;">
+        <a href="https://console.firebase.google.com" target="_blank" style="color:#60a5fa;">console.firebase.google.com</a> 접속 →
+        [프로젝트 추가] → 프로젝트 이름 입력 → [계속] → 완료
+      </div>
+    </div>
+    <div style="background:#0a0f1a;border:1px solid #1e293b;border-radius:8px;padding:12px 16px;">
+      <div style="font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:4px;">STEP 2 — Realtime Database 생성</div>
+      <div style="font-size:12px;color:#64748b;">
+        왼쪽 메뉴 [빌드] → [Realtime Database] → [데이터베이스 만들기] →
+        위치: <b style="color:#94a3b8;">asia-southeast1</b> 선택 → 테스트 모드로 시작
+      </div>
+    </div>
+    <div style="background:#0a0f1a;border:1px solid #1e293b;border-radius:8px;padding:12px 16px;">
+      <div style="font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:4px;">STEP 3 — 설정값 이 파일에 붙여넣기</div>
+      <div style="font-size:12px;color:#64748b;">
+        프로젝트 설정(⚙️) → [일반] → [내 앱] → 웹앱 추가(</>) →
+        <b style="color:#94a3b8;">firebaseConfig</b> 복사 →
+        이 HTML 파일 상단 <b style="color:#94a3b8;">firebaseConfig</b> 부분에 붙여넣기 → 저장
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:14px;padding:10px 14px;background:#0f1f3d;border-radius:8px;border:1px solid #1e3a5f;">
+    <div style="font-size:11px;color:#60a5fa;">💡 완료 후 이 파일을 팀원에게 공유하면 모두 같은 DB를 실시간으로 사용!</div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="logo">🎓</div>
+    <div>
+      <div style="font-size:16px;font-weight:700;color:#f1f5f9;letter-spacing:-.3px;">강사 섭외 관리</div>
+      <div style="font-size:11px;color:var(--dim);display:flex;align-items:center;">
+        <span class="conn-dot off" id="connDot"></span>
+        <span id="connText">연결 중...</span>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <div class="view-toggle">
+      <button class="vt-btn active" id="btn-board"  onclick="switchView('board')">📋 보드</button>
+      <button class="vt-btn"        id="btn-table"  onclick="switchView('table')">📊 테이블</button>
+      <button class="vt-btn"        id="btn-search" onclick="switchView('search')">🔍 강사 서칭</button>
+    </div>
+    <button class="btn-export" onclick="exportCSV()">⬇ CSV</button>
+    <button onclick="document.getElementById('firebaseModal').style.display='flex'" style="background:#1a1000;color:#f59e0b;border:1px solid #f59e0b50;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">⚙️ Firebase 설정</button>
+    <button class="btn-primary" onclick="openForm()">+ 강사 추가</button>
+  </div>
+</header>
+
+<!-- STATS BAR -->
+<div class="stats-bar" id="statsBar"></div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <input class="input-field" id="searchInput" placeholder="🔍 이름, 과목, 연락처 검색..."
+    oninput="render()" style="width:220px;padding:7px 12px;font-size:12px;">
+  <div id="subjectPills" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:5px;">
+    <span style="font-size:11px;color:var(--dim);">정렬:</span>
+    <select class="input-field" id="sortKey" onchange="render()" style="width:auto;padding:5px 8px;font-size:12px;">
+      <option value="name">이름순</option>
+      <option value="subject">과목순</option>
+      <option value="status">상태순</option>
+      <option value="priority">우선순위순</option>
+    </select>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main style="padding:20px 24px;" id="mainContent">
+  <div style="text-align:center;padding:80px 0;color:var(--dim);">
+    <div style="font-size:28px;margin-bottom:12px;animation:spin 1s linear infinite;display:inline-block;">⟳</div>
+    <div style="font-size:14px;">Firebase 연결 중...</div>
+  </div>
+</main>
+
+<!-- Firebase 설정 모달 -->
+<div class="modal-bg" id="firebaseModal" style="display:none;">
+  <div class="card animate-in" style="padding:28px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;">
+    <h2 style="font-size:17px;font-weight:700;margin-bottom:6px;color:#f1f5f9;">🔧 Firebase 설정</h2>
+    <p style="font-size:12px;color:#64748b;margin-bottom:20px;">Firebase 콘솔에서 복사한 firebaseConfig 값을 아래에 붙여넣으세요.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div><label class="lbl">apiKey</label><input class="input-field" id="fb-apiKey" placeholder="AIzaSy..."></div>
+      <div><label class="lbl">authDomain</label><input class="input-field" id="fb-authDomain" placeholder="your-project.firebaseapp.com"></div>
+      <div><label class="lbl">databaseURL</label><input class="input-field" id="fb-databaseURL" placeholder="https://your-project-default-rtdb.asia-southeast1.firebasedatabase.app"></div>
+      <div><label class="lbl">projectId</label><input class="input-field" id="fb-projectId" placeholder="your-project-id"></div>
+      <div><label class="lbl">storageBucket</label><input class="input-field" id="fb-storageBucket" placeholder="your-project.appspot.com"></div>
+      <div><label class="lbl">messagingSenderId</label><input class="input-field" id="fb-messagingSenderId" placeholder="123456789"></div>
+      <div><label class="lbl">appId</label><input class="input-field" id="fb-appId" placeholder="1:123456:web:abc123"></div>
+    </div>
+    <div style="margin-top:16px;padding:12px 14px;background:#0f1f3d;border-radius:8px;border:1px solid #1e3a5f;">
+      <div style="font-size:11px;color:#60a5fa;margin-bottom:6px;font-weight:600;">💡 또는 전체 코드 붙여넣기</div>
+      <textarea class="input-field" id="fb-paste" rows="5" placeholder='여기에 firebaseConfig = { ... } 전체를 붙여넣으면 자동으로 입력됩니다.' style="resize:vertical;font-size:11px;font-family:monospace;" oninput="parsePaste()"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+      <button class="btn-ghost" onclick="document.getElementById('firebaseModal').style.display='none'">취소</button>
+      <button class="btn-primary" onclick="saveFirebaseConfig()">저장 후 연결</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-bg" id="formModal" style="display:none;">
+  <div class="card animate-in" style="padding:28px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;">
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:22px;color:#f1f5f9;" id="formTitle">➕ 새 강사 추가</h2>
+    <div class="form-grid">
+      <div><label class="lbl">이름 *</label><input class="input-field" id="f-name" placeholder="홍길동"></div>
+      <div><label class="lbl">과목</label><select class="input-field" id="f-subject"></select></div>
+      <div><label class="lbl">연락처</label><input class="input-field" id="f-phone" placeholder="010-0000-0000"></div>
+      <div><label class="lbl">이메일</label><input class="input-field" id="f-email" placeholder="email@example.com"></div>
+      <div><label class="lbl">컨택할 사람</label><input class="input-field" id="f-contact" placeholder="예: 김팀장, 소속 학원장"></div>
+      <div><label class="lbl">경력</label><input class="input-field" id="f-career" placeholder="전 XX강사 5년"></div>
+      <div><label class="lbl">섭외 상태</label><select class="input-field" id="f-status"></select></div>
+      <div>
+        <label class="lbl">우선순위</label>
+        <select class="input-field" id="f-priority">
+          <option value="높음">높음</option>
+          <option value="보통" selected>보통</option>
+          <option value="낮음">낮음</option>
+        </select>
+      </div>
+      <div style="grid-column:1/-1;">
+        <label class="lbl">메모</label>
+        <textarea class="input-field" id="f-memo" rows="3" placeholder="섭외 진행상황, 특이사항 등..." style="resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+      <button class="btn-ghost" onclick="closeForm()">취소</button>
+      <button class="btn-primary" onclick="saveForm()" id="saveBtn">저장하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM -->
+<div class="modal-bg" id="delModal" style="display:none;">
+  <div class="card animate-in" style="padding:28px;width:320px;text-align:center;">
+    <div style="font-size:32px;margin-bottom:12px;">🗑️</div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:6px;">강사를 삭제하시겠어요?</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:22px;" id="delName"></div>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn-ghost" onclick="closeDelete()">취소</button>
+      <button style="background:var(--red);color:#fff;padding:8px 22px;border-radius:8px;font-size:13px;font-weight:600;" onclick="confirmDelete()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="card" style="padding:12px 20px;font-size:13px;font-weight:500;"></div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────
+const SUBJECTS = ["컴활1급","컴활2급","한식조리기능사","문신사","경비지도사","SQLD","ADSP","빅데이터분석기사","정보보안기사"];
+const STATUS_CFG = {
+  "미접촉": {color:"#94a3b8",bg:"#1e293b",icon:"○"},
+  "연락중":  {color:"#f59e0b",bg:"#2d1f00",icon:"◑"},
+  "협의중":  {color:"#3b82f6",bg:"#0f1f3d",icon:"◕"},
+  "섭외완료":{color:"#22c55e",bg:"#0a2010",icon:"●"},
+  "섭외실패":{color:"#ef4444",bg:"#2d0a0a",icon:"✕"},
+};
+const PRIORITY_CFG = {"높음":"#ef4444","보통":"#f59e0b","낮음":"#64748b"};
+const SEARCH_QUERIES = {
+  "컴활1급":    ["컴활1급 강사 섭외 연락처","컴퓨터활용능력 1급 강사 모집","컴활1급 강의 강사 프리랜서"],
+  "컴활2급":    ["컴활2급 강사 섭외 연락처","컴퓨터활용능력 2급 강사 모집","컴활 강사 구인"],
+  "한식조리기능사":["한식조리기능사 강사 섭외","조리기능사 강의 강사 연락처","한식조리 자격증 강사 모집"],
+  "문신사":     ["문신사 자격증 강사 섭외","문신사 강의 강사 연락처","문신사 자격증 강의 모집"],
+  "경비지도사":  ["경비지도사 강사 섭외 연락처","경비지도사 강의 강사 모집","경비지도사 자격증 강사"],
+  "SQLD":      ["SQLD 강사 섭외 연락처","SQLD 강의 강사 모집","SQL 자격증 강사 프리랜서"],
+  "ADSP":      ["ADSP 강사 섭외 연락처","ADSP 데이터분석준전문가 강사 모집","ADSP 강의 강사"],
+  "빅데이터분석기사":["빅데이터분석기사 강사 섭외","빅데이터 강의 강사 연락처","빅데이터분석기사 강사 모집"],
+  "정보보안기사": ["정보보안기사 강사 섭외 연락처","정보보안기사 강의 강사 모집","정보보안 자격증 강사"],
+};
+const SITE_LIST = [
+  {name:"크몽",url:"https://kmong.com/search?keyword=",desc:"프리랜서 강사 직접 검색·연락 가능",tag:"프리랜서",color:"#f59e0b"},
+  {name:"탈잉",url:"https://taling.me/search?q=",desc:"튜터 프로필·연락처 공개",tag:"튜터",color:"#3b82f6"},
+  {name:"클래스101",url:"https://class101.net/search?query=",desc:"크리에이터 프로필 확인 가능",tag:"온라인",color:"#8b5cf6"},
+  {name:"에듀윌",url:"https://www.eduwill.net/search?keyword=",desc:"자격증 전문 강사 보유",tag:"자격증",color:"#22c55e"},
+  {name:"해커스",url:"https://www.hackers.com/search?q=",desc:"IT·자격증 강사 다수 보유",tag:"IT",color:"#ef4444"},
+  {name:"네이버 카페",url:"https://cafe.naver.com/ArticleSearchList.nhn?search.query=",desc:"강사 구인·구직 카페 통합 검색",tag:"커뮤니티",color:"#06b6d4"},
+  {name:"사람인",url:"https://www.saramin.co.kr/zf_user/search?searchword=",desc:"강사직 채용공고 및 프리랜서 구인",tag:"채용",color:"#f97316"},
+  {name:"링크드인",url:"https://www.linkedin.com/search/results/people/?keywords=",desc:"현직자 프로필 직접 검색 및 메시지",tag:"네트워크",color:"#0ea5e9"},
+];
+
+// ─── STATE ────────────────────────────────────────────────
+window._instructors = window._instructors || [];
+let editId = null, deleteId = null, currentView = "board";
+let filterSubject = "전체", filterStatus = "전체", toastTimer = null;
+window._appReady = false;
+
+// ─── Firebase 연결 대기 ────────────────────────────────────
+document.addEventListener("firebase-ready", () => {
+  window._appReady = true;
+  setConn(true);
+  render();
+});
+
+// 5초 후에도 연결 안 되면 설정 배너 표시
+setTimeout(() => {
+  if (!window._appReady) {
+    document.getElementById("setupBanner").style.display = "block";
+    document.getElementById("mainContent").innerHTML =
+      `<div style="text-align:center;padding:40px;color:var(--dim);font-size:13px;">
+        Firebase 설정 후 이 페이지를 새로고침 해주세요
+      </div>`;
+    setConn(false);
+  }
+}, 5000);
+
+function setConn(on) {
+  document.getElementById("connDot").className = "conn-dot " + (on?"on":"off");
+  document.getElementById("connText").textContent = on ? "실시간 연결됨 · 모든 변경사항 자동 저장" : "연결 안됨 · Firebase 설정 필요";
+}
+
+// ─── HELPERS ──────────────────────────────────────────────
+function gi() { return window._instructors || []; }
+
+function filtered() {
+  const q = (document.getElementById("searchInput")||{}).value?.toLowerCase()||"";
+  const sortKey = (document.getElementById("sortKey")||{}).value||"name";
+  let arr = gi().filter(i => {
+    return (filterSubject==="전체"||i.subject===filterSubject) &&
+           (filterStatus==="전체"||i.status===filterStatus) &&
+           (!q||i.name?.includes(q)||i.subject?.includes(q)||(i.phone||"").includes(q)||(i.email||"").toLowerCase().includes(q));
+  });
+  const ord={높음:0,보통:1,낮음:2}, sord=Object.keys(STATUS_CFG);
+  arr.sort((a,b)=>{
+    if(sortKey==="name") return (a.name||"").localeCompare(b.name||"","ko");
+    if(sortKey==="subject") return (a.subject||"").localeCompare(b.subject||"","ko");
+    if(sortKey==="status") return sord.indexOf(a.status)-sord.indexOf(b.status);
+    if(sortKey==="priority") return ord[a.priority]-ord[b.priority];
+    return 0;
+  });
+  return arr;
+}
+
+// ─── RENDER ───────────────────────────────────────────────
+window.render = function() {
+  renderStats();
+  renderPills();
+  if(currentView==="board") renderBoard();
+  else if(currentView==="table") renderTable();
+  else renderSearchView();
+};
+
+function renderStats() {
+  const bar = document.getElementById("statsBar");
+  if(!bar) return;
+  let html="";
+  Object.entries(STATUS_CFG).forEach(([s,c])=>{
+    const cnt = gi().filter(i=>i.status===s).length;
+    const active = filterStatus===s;
+    html+=`<div class="stat-chip" onclick="toggleStatusFilter('${s}')"
+      style="background:${active?c.bg:"var(--card)"};border-color:${active?c.color+"60":"var(--border)"};">
+      <span style="color:${c.color};font-size:15px;">${c.icon}</span>
+      <span style="font-size:12px;color:var(--muted);">${s}</span>
+      <span style="font-size:16px;font-weight:700;color:${c.color};font-family:'Space Mono',monospace;">${cnt}</span>
+    </div>`;
+  });
+  html+=`<div style="margin-left:auto;display:flex;align-items:center;gap:5px;flex-shrink:0;padding:0 8px;">
+    <span style="font-size:12px;color:var(--dim);">전체</span>
+    <span style="font-size:18px;font-weight:700;color:#f1f5f9;font-family:'Space Mono',monospace;">${gi().length}</span>
+    <span style="font-size:12px;color:var(--dim);">명</span>
+  </div>`;
+  bar.innerHTML=html;
+}
+
+function renderPills() {
+  const wrap = document.getElementById("subjectPills");
+  if(!wrap) return;
+  wrap.innerHTML=["전체",...SUBJECTS].map(s=>{
+    const active=filterSubject===s;
+    return `<button class="pill" onclick="setSubject('${s}')"
+      style="background:${active?"var(--blue)":"var(--border)"};color:${active?"#fff":"var(--muted)"};border-color:${active?"var(--blue)":"var(--border)"};">${s}</button>`;
+  }).join("");
+}
+
+function renderBoard() {
+  const main=document.getElementById("mainContent"); if(!main)return;
+  const list=filtered();
+  let subjHtml=`<div class="subj-grid">`;
+  SUBJECTS.forEach(s=>{
+    const total=gi().filter(i=>i.subject===s).length;
+    const done=gi().filter(i=>i.subject===s&&i.status==="섭외완료").length;
+    const pct=total>0?Math.round((done/total)*100):0;
+    subjHtml+=`<div class="card" style="padding:12px 14px;">
+      <div style="font-size:11px;color:var(--dim);font-weight:600;margin-bottom:7px;">${s}</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${done===total&&total>0?"#22c55e":"#3b82f6"};"></div></div>
+        <span style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;white-space:nowrap;">${done}/${total}</span>
+      </div>
+    </div>`;
+  });
+  subjHtml+=`</div>`;
+  let boardHtml=`<div class="board-wrap">`;
+  Object.entries(STATUS_CFG).forEach(([status,cfg])=>{
+    const items=list.filter(i=>i.status===status);
+    let col=`<div><div style="display:flex;align-items:center;gap:6px;padding:6px 0;margin-bottom:8px;">
+      <span style="color:${cfg.color};font-size:15px;">${cfg.icon}</span>
+      <span style="font-size:12px;font-weight:600;color:var(--muted);">${status}</span>
+      <span style="margin-left:auto;font-size:11px;font-weight:700;font-family:'Space Mono',monospace;color:${cfg.color};background:${cfg.bg};padding:1px 8px;border-radius:10px;">${items.length}</span>
+    </div>`;
+    if(!items.length) col+=`<div class="empty-col">없음</div>`;
+    items.forEach(item=>{
+      const pc=PRIORITY_CFG[item.priority]||"#64748b";
+      const others=Object.keys(STATUS_CFG).filter(s=>s!==status).slice(0,3);
+      col+=`<div class="card instr-card animate-in" onclick="openEdit('${item.id}')" style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#f1f5f9;">${item.name||""}</div>
+            <div style="font-size:11px;color:var(--dim);margin-top:2px;">${item.subject||""}</div>
+          </div>
+          <span class="tag" style="background:${pc}20;color:${pc};">${item.priority||"보통"}</span>
+        </div>
+        ${item.phone?`<div style="font-size:11px;color:#475569;margin-bottom:3px;">📞 ${item.phone}</div>`:""}
+        ${item.contact?`<div style="font-size:11px;color:#475569;margin-bottom:6px;">👤 ${item.contact}</div>`:""}
+        ${item.memo?`<div style="font-size:11px;color:var(--dim);background:var(--bg);padding:5px 8px;border-radius:6px;margin-bottom:8px;">${item.memo.length>32?item.memo.slice(0,32)+"…":item.memo}</div>`:""}
+        <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;" onclick="event.stopPropagation();">
+          ${others.map(s=>`<button class="btn-ghost" onclick="event.stopPropagation();updateStatus('${item.id}','${s}')" style="font-size:10px;padding:2px 6px;">${STATUS_CFG[s].icon} ${s}</button>`).join("")}
+          <button onclick="event.stopPropagation();openDelete('${item.id}')" style="margin-left:auto;background:transparent;color:#475569;font-size:14px;padding:2px 5px;">✕</button>
+        </div>
+      </div>`;
+    });
+    col+=`</div>`;
+    boardHtml+=col;
+  });
+  boardHtml+=`</div>`;
+  main.innerHTML=(filterSubject==="전체"?subjHtml:"")+boardHtml;
+}
+
+function renderTable() {
+  const list=filtered();
+  let rows=list.map(item=>{
+    const pc=PRIORITY_CFG[item.priority]||"#64748b";
+    return `<tr class="hover-row">
+      <td><button onclick="openEdit('${item.id}')" style="background:none;color:#f1f5f9;font-size:13px;font-weight:600;text-decoration:underline;text-decoration-color:#334155;">${item.name||""}</button></td>
+      <td><span class="tag" style="background:#1e3a5f;color:#60a5fa;">${item.subject||""}</span></td>
+      <td style="font-family:'Space Mono',monospace;color:var(--muted);font-size:12px;">${item.phone||"-"}</td>
+      <td style="color:var(--muted);font-size:12px;">${item.email||"-"}</td>
+      <td style="color:var(--muted);font-size:12px;">${item.contact||"-"}</td>
+      <td style="color:var(--dim);font-size:11px;max-width:130px;"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.career||"-"}</div></td>
+      <td>
+        <select class="input-field" onchange="updateStatus('${item.id}',this.value)" style="width:auto;padding:3px 8px;font-size:11px;">
+          ${Object.keys(STATUS_CFG).map(s=>`<option value="${s}"${s===item.status?" selected":""}>${s}</option>`).join("")}
+        </select>
+      </td>
+      <td><span class="tag" style="background:${pc}20;color:${pc};">${item.priority||"보통"}</span></td>
+      <td style="color:var(--dim);font-size:11px;max-width:120px;"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.memo||"-"}</div></td>
+      <td><div style="display:flex;gap:4px;">
+        <button class="btn-ghost" onclick="openEdit('${item.id}')" style="padding:3px 10px;font-size:11px;">수정</button>
+        <button class="btn-danger" onclick="openDelete('${item.id}')">삭제</button>
+      </div></td>
+    </tr>`;
+  }).join("");
+  if(!list.length) rows=`<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--faint);">검색 결과가 없습니다</td></tr>`;
+  document.getElementById("mainContent").innerHTML=`
+    <div class="card" style="overflow:hidden;"><div style="overflow-x:auto;">
+      <table><thead><tr>
+        <th>이름</th><th>과목</th><th>연락처</th><th>이메일</th><th>컨택할 사람</th>
+        <th>경력</th><th>상태</th><th>우선순위</th><th>메모</th><th>액션</th>
+      </tr></thead><tbody>${rows}</tbody></table>
+    </div></div>`;
+}
+
+function renderSearchView() {
+  const main=document.getElementById("mainContent"); if(!main)return;
+  let html=`<div class="card" style="padding:16px 20px;margin-bottom:20px;border-color:#1e3a5f;background:#0f1f3d;display:flex;align-items:center;gap:12px;">
+    <span style="font-size:24px;">💡</span>
+    <div>
+      <div style="font-size:13px;font-weight:600;color:#60a5fa;margin-bottom:3px;">강사 서칭 도우미</div>
+      <div style="font-size:12px;color:#475569;">과목을 클릭하면 구글 검색이 자동으로 열립니다. 찾은 강사는 바로 <b style="color:#94a3b8;">+ 강사 추가</b>로 등록하세요.</div>
+    </div>
+  </div>`;
+  html+=`<div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:12px;">📌 과목별 자동 검색</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:28px;">`;
+  SUBJECTS.forEach(subj=>{
+    const queries=SEARCH_QUERIES[subj]||[];
+    const done=gi().filter(i=>i.subject===subj&&i.status==="섭외완료").length;
+    const total=gi().filter(i=>i.subject===subj).length;
+    html+=`<div class="card" style="padding:14px 16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:13px;font-weight:700;color:#f1f5f9;">${subj}</span>
+        <span style="font-size:10px;color:${done>0&&done===total?"#22c55e":"#64748b"};font-family:'Space Mono',monospace;">${done}/${total} 완료</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        ${queries.map(q=>`<button onclick="window.open('https://www.google.com/search?q='+encodeURIComponent('${q}'),'_blank')"
+          style="background:#0a0f1a;border:1px solid #1e293b;color:#94a3b8;padding:6px 10px;border-radius:6px;font-size:11px;text-align:left;display:flex;align-items:center;gap:6px;"
+          onmouseover="this.style.borderColor='#3b82f6';this.style.color='#60a5fa'"
+          onmouseout="this.style.borderColor='#1e293b';this.style.color='#94a3b8'">
+          <span style="color:#3b82f6;flex-shrink:0;">🔍</span>${q}
+        </button>`).join("")}
+      </div>
+    </div>`;
+  });
+  html+=`</div><div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:12px;">🌐 강사 찾기 좋은 사이트</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:28px;">`;
+  SITE_LIST.forEach(site=>{
+    html+=`<div class="card" style="padding:14px 16px;transition:border-color .15s;"
+      onmouseover="this.style.borderColor='${site.color}60'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:14px;font-weight:700;color:#f1f5f9;">${site.name}</span>
+        <span class="tag" style="background:${site.color}20;color:${site.color};">${site.tag}</span>
+      </div>
+      <div style="font-size:11px;color:#64748b;margin-bottom:10px;">${site.desc}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${SUBJECTS.slice(0,4).map(s=>`<button onclick="window.open('${site.url}'+encodeURIComponent('${s} 강사'),'_blank')"
+          style="background:#0a0f1a;border:1px solid #1e293b;color:#64748b;padding:3px 8px;border-radius:5px;font-size:10px;transition:all .15s;"
+          onmouseover="this.style.background='${site.color}20';this.style.color='${site.color}'"
+          onmouseout="this.style.background='#0a0f1a';this.style.color='#64748b'">${s}</button>`).join("")}
+        <button onclick="window.open('${site.url}','_blank')"
+          style="background:${site.color}20;border:1px solid ${site.color}40;color:${site.color};padding:3px 10px;border-radius:5px;font-size:10px;font-weight:600;margin-left:auto;">
+          사이트 열기 →
+        </button>
+      </div>
+    </div>`;
+  });
+  html+=`</div><div class="card" style="padding:16px 20px;border-color:#1a2a1a;">
+    <div style="font-size:12px;font-weight:700;color:#22c55e;margin-bottom:10px;">✅ 강사 섭외 팁</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">
+      ${[["크몽·탈잉","프리랜서 강사가 많고 연락처 공개 비율 높음"],["네이버 카페","'자격증 강사 구인' 카페에 직접 공고 게시 가능"],["링크드인","현직자 직접 DM 가능, IT 계열 강사 탐색에 유리"],["유튜브 검색","해당 자격증 강의 유튜버에게 직접 협력 제안"],["자격증 합격 카페","합격자 중 강의 희망자 공고 게시 효과적"],["학원 강사 이직","기존 학원 강사에게 직접 섭외 제안"]].map(([t,d])=>`
+        <div style="background:#0a0f1a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
+          <div style="font-size:11px;font-weight:600;color:#4ade80;margin-bottom:3px;">${t}</div>
+          <div style="font-size:11px;color:#475569;">${d}</div>
+        </div>`).join("")}
+    </div>
+  </div>`;
+  main.innerHTML=html;
+}
+
+// ─── ACTIONS ──────────────────────────────────────────────
+function toggleStatusFilter(s){filterStatus=filterStatus===s?"전체":s;render();}
+function setSubject(s){filterSubject=s;render();}
+function switchView(v){
+  currentView=v;
+  ["board","table","search"].forEach(k=>document.getElementById("btn-"+k).classList.toggle("active",k===v));
+  render();
+}
+
+function updateStatus(id,status){
+  if(window.fbUpdate) window.fbUpdate(id,{status});
+  showToast(`상태 변경: ${status}`);
+}
+
+// ─── FORM ─────────────────────────────────────────────────
+function populateFormSelects(){
+  document.getElementById("f-subject").innerHTML=SUBJECTS.map(s=>`<option value="${s}">${s}</option>`).join("");
+  document.getElementById("f-status").innerHTML=Object.keys(STATUS_CFG).map(s=>`<option value="${s}">${s}</option>`).join("");
+}
+
+function openForm(){
+  editId=null;
+  document.getElementById("formTitle").textContent="➕ 새 강사 추가";
+  ["name","phone","email","contact","career","memo"].forEach(k=>document.getElementById("f-"+k).value="");
+  document.getElementById("f-subject").value=SUBJECTS[0];
+  document.getElementById("f-status").value="미접촉";
+  document.getElementById("f-priority").value="보통";
+  document.getElementById("formModal").style.display="flex";
+}
+
+function openEdit(id){
+  const item=gi().find(x=>x.id===id); if(!item)return;
+  editId=id;
+  document.getElementById("formTitle").textContent="✏️ 강사 정보 수정";
+  document.getElementById("f-name").value=item.name||"";
+  document.getElementById("f-subject").value=item.subject||SUBJECTS[0];
+  document.getElementById("f-phone").value=item.phone||"";
+  document.getElementById("f-email").value=item.email||"";
+  document.getElementById("f-contact").value=item.contact||"";
+  document.getElementById("f-career").value=item.career||"";
+  document.getElementById("f-status").value=item.status||"미접촉";
+  document.getElementById("f-priority").value=item.priority||"보통";
+  document.getElementById("f-memo").value=item.memo||"";
+  document.getElementById("formModal").style.display="flex";
+}
+
+function closeForm(){document.getElementById("formModal").style.display="none";}
+
+function saveForm(){
+  const name=document.getElementById("f-name").value.trim();
+  if(!name){showToast("이름을 입력해주세요","error");return;}
+  const data={
+    name, subject:document.getElementById("f-subject").value,
+    phone:document.getElementById("f-phone").value.trim(),
+    email:document.getElementById("f-email").value.trim(),
+    contact:document.getElementById("f-contact").value.trim(),
+    career:document.getElementById("f-career").value.trim(),
+    status:document.getElementById("f-status").value,
+    priority:document.getElementById("f-priority").value,
+    memo:document.getElementById("f-memo").value.trim(),
+  };
+  const btn=document.getElementById("saveBtn");
+  btn.textContent="저장 중..."; btn.disabled=true;
+  if(editId){
+    window.fbUpdate && window.fbUpdate(editId,data);
+    showToast("수정 완료!");
+  } else {
+    window.fbAdd && window.fbAdd(data);
+    showToast("강사 추가 완료!");
+  }
+  setTimeout(()=>{btn.textContent="저장하기";btn.disabled=false;},800);
+  closeForm();
+}
+
+// ─── DELETE ───────────────────────────────────────────────
+function openDelete(id){
+  deleteId=id;
+  const item=gi().find(x=>x.id===id);
+  document.getElementById("delName").textContent=`"${item?.name}" 강사의 정보가 삭제됩니다.`;
+  document.getElementById("delModal").style.display="flex";
+}
+function closeDelete(){document.getElementById("delModal").style.display="none";deleteId=null;}
+function confirmDelete(){
+  if(!deleteId)return;
+  window.fbDelete && window.fbDelete(deleteId);
+  closeDelete(); showToast("삭제 완료");
+}
+
+// ─── CSV ──────────────────────────────────────────────────
+function exportCSV(){
+  const headers=["이름","과목","연락처","이메일","컨택할 사람","경력","상태","우선순위","메모"];
+  const rows=gi().map(i=>[i.name,i.subject,i.phone,i.email,i.contact,i.career,i.status,i.priority,i.memo].map(v=>`"${(v||"").replace(/"/g,'""')}"`).join(","));
+  const csv="\uFEFF"+[headers.join(","),...rows].join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
+  a.download=`강사섭외현황_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); showToast("CSV 내보내기 완료!");
+}
+
+// ─── TOAST ────────────────────────────────────────────────
+function showToast(msg,type="success"){
+  const t=document.getElementById("toast");
+  t.style.display="block";
+  t.style.background=type==="error"?"#7f1d1d":"#14532d";
+  t.style.border=`1px solid ${type==="error"?"#ef4444":"#22c55e"}`;
+  t.style.color="#fff";
+  t.textContent=(type==="error"?"⚠️ ":"✓ ")+msg;
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{t.style.display="none";},2500);
+}
+
+// ─── FIREBASE CONFIG UI ───────────────────────────────────
+function parsePaste(){
+  const raw = document.getElementById("fb-paste").value;
+  const fields = ["apiKey","authDomain","databaseURL","projectId","storageBucket","messagingSenderId","appId"];
+  fields.forEach(key => {
+    const match = raw.match(new RegExp(`${key}\\s*:\\s*["']([^"']+)["']`));
+    if(match) document.getElementById("fb-"+key).value = match[1];
+  });
+}
+
+function saveFirebaseConfig(){
+  const cfg = {
+    apiKey:            document.getElementById("fb-apiKey").value.trim(),
+    authDomain:        document.getElementById("fb-authDomain").value.trim(),
+    databaseURL:       document.getElementById("fb-databaseURL").value.trim(),
+    projectId:         document.getElementById("fb-projectId").value.trim(),
+    storageBucket:     document.getElementById("fb-storageBucket").value.trim(),
+    messagingSenderId: document.getElementById("fb-messagingSenderId").value.trim(),
+    appId:             document.getElementById("fb-appId").value.trim(),
+  };
+  if(!cfg.apiKey||!cfg.databaseURL){showToast("apiKey와 databaseURL은 필수입니다","error");return;}
+  localStorage.setItem("firebase_config", JSON.stringify(cfg));
+  document.getElementById("firebaseModal").style.display="none";
+  showToast("설정 저장 완료! 페이지를 새로고침합니다...");
+  setTimeout(()=>location.reload(), 1500);
+}
+
+// 저장된 설정 불러와서 폼에 채우기
+function loadSavedConfig(){
+  const saved = localStorage.getItem("firebase_config");
+  if(!saved) return;
+  const cfg = JSON.parse(saved);
+  Object.entries(cfg).forEach(([k,v])=>{
+    const el = document.getElementById("fb-"+k);
+    if(el) el.value = v;
+  });
+}
+loadSavedConfig();
+
+
+populateFormSelects();
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeForm();closeDelete();}});
+</script>
+</body>
+</html>
