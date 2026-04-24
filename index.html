@@ -246,7 +246,7 @@
       <div><label class="lbl">과목</label><select class="input-field" id="f-subject"></select></div>
       <div><label class="lbl">연락처</label><input class="input-field" id="f-phone" placeholder="010-0000-0000"></div>
       <div><label class="lbl">이메일</label><input class="input-field" id="f-email" placeholder="email@example.com"></div>
-      <div><label class="lbl">컨택할 사람</label><input class="input-field" id="f-contact" placeholder="예: 김팀장, 소속 학원장"></div>
+      <div><label class="lbl">컨택한 사람</label><input class="input-field" id="f-contact" placeholder="예: 김팀장, 소속 학원장"></div>
       <div><label class="lbl">응답여부</label><select class="input-field" id="f-career">
         <option value="">미확인</option>
         <option value="응답">응답</option>
@@ -517,7 +517,7 @@ function renderTable() {
   document.getElementById("mainContent").innerHTML=`
     <div class="card" style="overflow:hidden;"><div style="overflow-x:auto;">
       <table><thead><tr>
-        <th>이름</th><th>과목</th><th>연락처</th><th>이메일</th><th>컨택할 사람</th>
+        <th>이름</th><th>과목</th><th>연락처</th><th>이메일</th><th>컨택한 사람</th>
         <th>응답여부</th><th>상태</th><th>우선순위</th><th>메모</th><th>액션</th>
       </tr></thead><tbody>${rows}</tbody></table>
     </div></div>`;
@@ -678,7 +678,7 @@ function confirmDelete(){
 
 // ─── CSV ──────────────────────────────────────────────────
 function exportCSV(){
-  const headers=["이름","과목","연락처","이메일","컨택할 사람","응답여부","상태","우선순위","메모"];
+  const headers=["이름","과목","연락처","이메일","컨택한 사람","응답여부","상태","우선순위","메모"];
   const rows=gi().map(i=>[i.name,i.subject,i.phone,i.email,i.contact,i.career,i.status,i.priority,i.memo].map(v=>`"${(v||"").replace(/"/g,'""')}"`).join(","));
   const csv="\uFEFF"+[headers.join(","),...rows].join("\n");
   const a=document.createElement("a");
