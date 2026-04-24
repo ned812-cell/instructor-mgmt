@@ -26,8 +26,7 @@
     appId:             "1:1073939079509:web:9d3b4dd374408f59208fdc",
     measurementId:     "G-HNK79B0B2F"
   };
-  const _saved = localStorage.getItem("firebase_config");
-  const firebaseConfig = _saved ? JSON.parse(_saved) : _hardcoded;
+  const firebaseConfig = _hardcoded;
   // ══════════════════════════════════════════════════
 
   const app = initializeApp(firebaseConfig);
