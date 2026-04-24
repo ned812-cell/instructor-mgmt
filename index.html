@@ -176,7 +176,6 @@
     <div class="view-toggle">
       <button class="vt-btn active" id="btn-board"  onclick="switchView('board')">📋 보드</button>
       <button class="vt-btn"        id="btn-table"  onclick="switchView('table')">📊 테이블</button>
-      <button class="vt-btn"        id="btn-search" onclick="switchView('search')">🔍 강사 서칭</button>
     </div>
     <button class="btn-export" onclick="exportCSV()">⬇ CSV</button>
     <button onclick="openSubjectModal()" style="background:#0f1f3d;color:#60a5fa;border:1px solid #1e3a5f;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">📚 과목 관리</button>
@@ -400,8 +399,7 @@ window.render = function() {
   renderStats();
   renderPills();
   if(currentView==="board") renderBoard();
-  else if(currentView==="table") renderTable();
-  else renderSearchView();
+  else renderTable();
 };
 
 function renderStats() {
@@ -593,7 +591,7 @@ function toggleStatusFilter(s){filterStatus=filterStatus===s?"전체":s;render()
 function setSubject(s){filterSubject=s;render();}
 function switchView(v){
   currentView=v;
-  ["board","table","search"].forEach(k=>document.getElementById("btn-"+k).classList.toggle("active",k===v));
+  ["board","table"].forEach(k=>document.getElementById("btn-"+k).classList.toggle("active",k===v));
   render();
 }
 
