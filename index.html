@@ -179,6 +179,7 @@
       <button class="vt-btn"        id="btn-search" onclick="switchView('search')">🔍 강사 서칭</button>
     </div>
     <button class="btn-export" onclick="exportCSV()">⬇ CSV</button>
+    <button onclick="openSubjectModal()" style="background:#0f1f3d;color:#60a5fa;border:1px solid #1e3a5f;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">📚 과목 관리</button>
     <button onclick="document.getElementById('firebaseModal').style.display='flex'" style="background:#1a1000;color:#f59e0b;border:1px solid #f59e0b50;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">⚙️ Firebase 설정</button>
     <button class="btn-primary" onclick="openForm()">+ 강사 추가</button>
   </div>
@@ -268,6 +269,23 @@
   </div>
 </div>
 
+<!-- 과목 관리 모달 -->
+<div class="modal-bg" id="subjectModal" style="display:none;">
+  <div class="card animate-in" style="padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
+    <h2 style="font-size:17px;font-weight:700;margin-bottom:6px;color:#f1f5f9;">📚 과목 관리</h2>
+    <p style="font-size:12px;color:#64748b;margin-bottom:16px;">과목을 추가하거나 삭제할 수 있어요.</p>
+    <div id="subjectList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;"></div>
+    <div style="display:flex;gap:8px;">
+      <input class="input-field" id="newSubjectInput" placeholder="새 과목 입력 (예: 손해평가사)" style="flex:1;"
+        onkeydown="if(event.key==='Enter') addSubject()">
+      <button class="btn-primary" onclick="addSubject()" style="white-space:nowrap;">+ 추가</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:20px;">
+      <button class="btn-ghost" onclick="document.getElementById('subjectModal').style.display='none'">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- DELETE CONFIRM -->
 <div class="modal-bg" id="delModal" style="display:none;">
   <div class="card animate-in" style="padding:28px;width:320px;text-align:center;">
@@ -286,7 +304,9 @@
 
 <script>
 // ─── CONFIG ───────────────────────────────────────────────
-const SUBJECTS = ["컴활1급","컴활2급","한식조리기능사","문신사","경비지도사","SQLD","ADSP","빅데이터분석기사","정보보안기사"];
+const DEFAULT_SUBJECTS = ["컴활1급","컴활2급","한식조리기능사","문신사","경비지도사","SQLD","ADSP","빅데이터분석기사","정보보안기사","손해평가사"];
+let SUBJECTS = JSON.parse(localStorage.getItem("custom_subjects") || JSON.stringify(DEFAULT_SUBJECTS));
+function saveSubjects() { localStorage.setItem("custom_subjects", JSON.stringify(SUBJECTS)); }
 const STATUS_CFG = {
   "미접촉": {color:"#94a3b8",bg:"#1e293b",icon:"○"},
   "연락중":  {color:"#f59e0b",bg:"#2d1f00",icon:"◑"},
@@ -712,9 +732,45 @@ function loadSavedConfig(){
 }
 loadSavedConfig();
 
+// ─── 과목 관리 ────────────────────────────────────────────
+function openSubjectModal(){
+  renderSubjectList();
+  document.getElementById("subjectModal").style.display="flex";
+}
+function renderSubjectList(){
+  document.getElementById("subjectList").innerHTML = SUBJECTS.map((s,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#0a0f1a;border:1px solid #1e293b;border-radius:8px;padding:8px 12px;">
+      <span style="font-size:13px;color:#e2e8f0;">${s}</span>
+      <button onclick="deleteSubject(${i})" style="background:transparent;color:#475569;font-size:16px;padding:0 4px;"
+        onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#475569'">✕</button>
+    </div>`).join("");
+}
+function addSubject(){
+  const input=document.getElementById("newSubjectInput");
+  const val=input.value.trim();
+  if(!val){showToast("과목명을 입력해주세요","error");return;}
+  if(SUBJECTS.includes(val)){showToast("이미 있는 과목이에요","error");return;}
+  SUBJECTS.push(val);
+  saveSubjects();
+  input.value="";
+  renderSubjectList();
+  populateFormSelects();
+  render();
+  showToast(`"${val}" 과목 추가!`);
+}
+function deleteSubject(idx){
+  const name=SUBJECTS[idx];
+  if(gi().some(i=>i.subject===name)){showToast(`"${name}"은 사용 중인 과목이에요`,"error");return;}
+  SUBJECTS.splice(idx,1);
+  saveSubjects();
+  renderSubjectList();
+  populateFormSelects();
+  render();
+  showToast(`"${name}" 과목 삭제`);
+}
 
 populateFormSelects();
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeForm();closeDelete();}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeForm();closeDelete();document.getElementById("subjectModal").style.display="none";}});
 </script>
 </body>
 </html>
