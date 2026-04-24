@@ -58,19 +58,33 @@
     }
   };
 
+  // 팀원 이름 목록
+  const TEAM_MEMBERS = ["백기웅", "윤소라", "김영균"];
+
   // 로그아웃 함수
-  window.googleLogout = () => signOut(auth);
+  window.googleLogout = () => { signOut(auth); window._workerName = null; };
+
+  // 이름 선택 함수
+  window.selectWorker = (name) => {
+    window._workerName = name;
+    document.getElementById("workerModal").style.display = "none";
+    document.getElementById("appScreen").style.display = "flex";
+    document.getElementById("workerBadge").textContent = name;
+    window._appReady = true;
+    if(window._instructors) window.render();
+  };
 
   // 인증 상태 감지
   onAuthStateChanged(auth, (user) => {
     if (user && ALLOWED_EMAILS.includes(user.email)) {
-      // 로그인 성공 → 앱 표시
+      // 로그인 성공 → 이름 선택 팝업 표시
       document.getElementById("loginScreen").style.display = "none";
-      document.getElementById("appScreen").style.display = "flex";
+      document.getElementById("appScreen").style.display = "none";
+      document.getElementById("workerModal").style.display = "flex";
       // 유저 정보 표시
       document.getElementById("userInfo").innerHTML = `
         <img src="${user.photoURL||''}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid #334155;">
-        <span style="font-size:12px;color:#e2e8f0;font-weight:600;">${user.displayName||user.email}</span>
+        <span id="workerBadge" style="font-size:12px;color:#e2e8f0;font-weight:600;"></span>
         <button onclick="googleLogout()" style="background:#2d0a0a;color:#ef4444;border:1px solid #7f1d1d;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">로그아웃</button>
       `;
       window._currentUser = user;
@@ -78,7 +92,10 @@
       // 미로그인 → 로그인 화면 표시
       document.getElementById("loginScreen").style.display = "flex";
       document.getElementById("appScreen").style.display = "none";
+      document.getElementById("workerModal").style.display = "none";
       window._currentUser = null;
+      window._workerName = null;
+      window._appReady = false;
     }
   });
 
@@ -105,6 +122,8 @@
 
   window._dbReady = true;
   document.dispatchEvent(new Event("firebase-ready"));
+
+  // firebase-ready 이벤트는 workerModal에서 selectWorker 후 처리
 </script>
 
 <style>
@@ -206,6 +225,32 @@
   </div>
   <div style="margin-top:14px;padding:10px 14px;background:#0f1f3d;border-radius:8px;border:1px solid #1e3a5f;">
     <div style="font-size:11px;color:#60a5fa;">💡 완료 후 이 파일을 팀원에게 공유하면 모두 같은 DB를 실시간으로 사용!</div>
+  </div>
+</div>
+
+<!-- 이름 선택 모달 -->
+<div id="workerModal" style="display:none;position:fixed;inset:0;background:#0a0f1a;align-items:center;justify-content:center;z-index:998;flex-direction:column;">
+  <div style="text-align:center;animation:slideIn .3s ease;">
+    <div style="font-size:32px;margin-bottom:16px;">👋</div>
+    <div style="font-size:18px;font-weight:700;color:#f1f5f9;margin-bottom:8px;">안녕하세요!</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:32px;">오늘 작업하시는 분은 누구세요?</div>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button onclick="selectWorker('백기웅')" style="background:#111827;border:1px solid #1e293b;color:#e2e8f0;padding:16px 28px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all .15s;"
+        onmouseover="this.style.background='#1e3a5f';this.style.borderColor='#3b82f6';this.style.color='#60a5fa'"
+        onmouseout="this.style.background='#111827';this.style.borderColor='#1e293b';this.style.color='#e2e8f0'">
+        👤 백기웅
+      </button>
+      <button onclick="selectWorker('윤소라')" style="background:#111827;border:1px solid #1e293b;color:#e2e8f0;padding:16px 28px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all .15s;"
+        onmouseover="this.style.background='#1e3a5f';this.style.borderColor='#3b82f6';this.style.color='#60a5fa'"
+        onmouseout="this.style.background='#111827';this.style.borderColor='#1e293b';this.style.color='#e2e8f0'">
+        👤 윤소라
+      </button>
+      <button onclick="selectWorker('김영균')" style="background:#111827;border:1px solid #1e293b;color:#e2e8f0;padding:16px 28px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all .15s;"
+        onmouseover="this.style.background='#1e3a5f';this.style.borderColor='#3b82f6';this.style.color='#60a5fa'"
+        onmouseout="this.style.background='#111827';this.style.borderColor='#1e293b';this.style.color='#e2e8f0'">
+        👤 김영균
+      </button>
+    </div>
   </div>
 </div>
 
@@ -417,9 +462,8 @@ window._appReady = false;
 
 // ─── Firebase 연결 대기 ────────────────────────────────────
 document.addEventListener("firebase-ready", () => {
-  window._appReady = true;
+  // workerName 선택 후 render() 호출되므로 여기선 대기
   setConn(true);
-  render();
 });
 
 // 5초 후에도 연결 안 되면 설정 배너 표시
@@ -541,6 +585,7 @@ function renderBoard() {
         ${item.phone?`<div style="font-size:11px;color:#475569;margin-bottom:3px;">📞 ${item.phone}</div>`:""}
         ${item.contact?`<div style="font-size:11px;color:#475569;margin-bottom:6px;">👤 ${item.contact}</div>`:""}
         ${item.memo?`<div style="font-size:11px;color:var(--dim);background:var(--bg);padding:5px 8px;border-radius:6px;margin-bottom:8px;">${item.memo.length>32?item.memo.slice(0,32)+"…":item.memo}</div>`:""}
+        ${item.lastModifiedBy?`<div style="font-size:10px;color:#334155;margin-bottom:6px;">✏️ ${item.lastModifiedBy} · ${item.lastModifiedAt||""}</div>`:""}
         <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;" onclick="event.stopPropagation();">
           ${others.map(s=>`<button class="btn-ghost" onclick="event.stopPropagation();updateStatus('${item.id}','${s}')" style="font-size:10px;padding:2px 6px;">${STATUS_CFG[s].icon} ${s}</button>`).join("")}
           <button onclick="event.stopPropagation();openDelete('${item.id}')" style="margin-left:auto;background:transparent;color:#475569;font-size:14px;padding:2px 5px;">✕</button>
@@ -662,8 +707,19 @@ function switchView(v){
   render();
 }
 
+function getModifyInfo() {
+  const name = window._workerName || "알 수 없음";
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const timeStr = `${String(now.getFullYear()).slice(2)}.${pad(now.getMonth()+1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  return {
+    lastModifiedBy: name,
+    lastModifiedAt: timeStr,
+  };
+}
+
 function updateStatus(id,status){
-  if(window.fbUpdate) window.fbUpdate(id,{status});
+  if(window.fbUpdate) window.fbUpdate(id,{status, ...getModifyInfo()});
   showToast(`상태 변경: ${status}`);
 }
 
@@ -713,6 +769,7 @@ function saveForm(){
     status:document.getElementById("f-status").value,
     priority:document.getElementById("f-priority").value,
     memo:document.getElementById("f-memo").value.trim(),
+    ...getModifyInfo(),
   };
   const btn=document.getElementById("saveBtn");
   btn.textContent="저장 중..."; btn.disabled=true;
