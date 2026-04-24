@@ -247,7 +247,13 @@
       <div><label class="lbl">연락처</label><input class="input-field" id="f-phone" placeholder="010-0000-0000"></div>
       <div><label class="lbl">이메일</label><input class="input-field" id="f-email" placeholder="email@example.com"></div>
       <div><label class="lbl">컨택할 사람</label><input class="input-field" id="f-contact" placeholder="예: 김팀장, 소속 학원장"></div>
-      <div><label class="lbl">경력</label><input class="input-field" id="f-career" placeholder="전 XX강사 5년"></div>
+      <div><label class="lbl">응답여부</label><select class="input-field" id="f-career">
+        <option value="">미확인</option>
+        <option value="응답">응답</option>
+        <option value="미응답">미응답</option>
+        <option value="거절">거절</option>
+        <option value="검토중">검토중</option>
+      </select></div>
       <div><label class="lbl">섭외 상태</label><select class="input-field" id="f-status"></select></div>
       <div>
         <label class="lbl">우선순위</label>
@@ -273,7 +279,7 @@
 <div class="modal-bg" id="subjectModal" style="display:none;">
   <div class="card animate-in" style="padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
     <h2 style="font-size:17px;font-weight:700;margin-bottom:6px;color:#f1f5f9;">📚 과목 관리</h2>
-    <p style="font-size:12px;color:#64748b;margin-bottom:16px;">과목을 추가하거나 삭제할 수 있어요.</p>
+    <p style="font-size:12px;color:#64748b;margin-bottom:16px;">☰ 아이콘을 드래그해서 순서를 바꾸고, ✕로 삭제할 수 있어요.</p>
     <div id="subjectList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;"></div>
     <div style="display:flex;gap:8px;">
       <input class="input-field" id="newSubjectInput" placeholder="새 과목 입력 (예: 손해평가사)" style="flex:1;"
@@ -493,7 +499,7 @@ function renderTable() {
       <td style="font-family:'Space Mono',monospace;color:var(--muted);font-size:12px;">${item.phone||"-"}</td>
       <td style="color:var(--muted);font-size:12px;">${item.email||"-"}</td>
       <td style="color:var(--muted);font-size:12px;">${item.contact||"-"}</td>
-      <td style="color:var(--dim);font-size:11px;max-width:130px;"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.career||"-"}</div></td>
+      <td style="color:var(--dim);font-size:11px;max-width:130px;"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.career||"미확인"}</div></td>
       <td>
         <select class="input-field" onchange="updateStatus('${item.id}',this.value)" style="width:auto;padding:3px 8px;font-size:11px;">
           ${Object.keys(STATUS_CFG).map(s=>`<option value="${s}"${s===item.status?" selected":""}>${s}</option>`).join("")}
@@ -512,7 +518,7 @@ function renderTable() {
     <div class="card" style="overflow:hidden;"><div style="overflow-x:auto;">
       <table><thead><tr>
         <th>이름</th><th>과목</th><th>연락처</th><th>이메일</th><th>컨택할 사람</th>
-        <th>경력</th><th>상태</th><th>우선순위</th><th>메모</th><th>액션</th>
+        <th>응답여부</th><th>상태</th><th>우선순위</th><th>메모</th><th>액션</th>
       </tr></thead><tbody>${rows}</tbody></table>
     </div></div>`;
 }
@@ -672,7 +678,7 @@ function confirmDelete(){
 
 // ─── CSV ──────────────────────────────────────────────────
 function exportCSV(){
-  const headers=["이름","과목","연락처","이메일","컨택할 사람","경력","상태","우선순위","메모"];
+  const headers=["이름","과목","연락처","이메일","컨택할 사람","응답여부","상태","우선순위","메모"];
   const rows=gi().map(i=>[i.name,i.subject,i.phone,i.email,i.contact,i.career,i.status,i.priority,i.memo].map(v=>`"${(v||"").replace(/"/g,'""')}"`).join(","));
   const csv="\uFEFF"+[headers.join(","),...rows].join("\n");
   const a=document.createElement("a");
@@ -738,12 +744,34 @@ function openSubjectModal(){
   document.getElementById("subjectModal").style.display="flex";
 }
 function renderSubjectList(){
-  document.getElementById("subjectList").innerHTML = SUBJECTS.map((s,i)=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;background:#0a0f1a;border:1px solid #1e293b;border-radius:8px;padding:8px 12px;">
-      <span style="font-size:13px;color:#e2e8f0;">${s}</span>
+  const list = document.getElementById("subjectList");
+  list.innerHTML = SUBJECTS.map((s,i)=>`
+    <div draggable="true" data-idx="${i}"
+      style="display:flex;align-items:center;gap:8px;background:#0a0f1a;border:1px solid #1e293b;border-radius:8px;padding:8px 12px;cursor:grab;transition:opacity .15s;"
+      ondragstart="dragStart(event,${i})"
+      ondragover="event.preventDefault()"
+      ondrop="dragDrop(event,${i})"
+      ondragend="dragEnd(event)">
+      <span style="color:#334155;font-size:14px;cursor:grab;">☰</span>
+      <span style="font-size:13px;color:#e2e8f0;flex:1;">${s}</span>
       <button onclick="deleteSubject(${i})" style="background:transparent;color:#475569;font-size:16px;padding:0 4px;"
         onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#475569'">✕</button>
     </div>`).join("");
+}
+
+let _dragIdx = null;
+function dragStart(e, idx){ _dragIdx=idx; e.target.style.opacity=".4"; }
+function dragEnd(e){ e.target.style.opacity="1"; }
+function dragDrop(e, toIdx){
+  if(_dragIdx===null||_dragIdx===toIdx) return;
+  const moved = SUBJECTS.splice(_dragIdx,1)[0];
+  SUBJECTS.splice(toIdx,0,moved);
+  _dragIdx=null;
+  saveSubjects();
+  renderSubjectList();
+  populateFormSelects();
+  render();
+  showToast("과목 순서 변경!");
 }
 function addSubject(){
   const input=document.getElementById("newSubjectInput");
