@@ -88,6 +88,9 @@
         <button onclick="googleLogout()" style="background:#2d0a0a;color:#ef4444;border:1px solid #7f1d1d;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">로그아웃</button>
       `;
       window._currentUser = user;
+      // 모바일 메뉴 유저 정보
+      const mobileUserInfo = document.getElementById("mobileUserInfo");
+      if(mobileUserInfo) mobileUserInfo.textContent = `👤 ${window._workerName||user.displayName||user.email}`;
     } else {
       // 미로그인 → 로그인 화면 표시
       document.getElementById("loginScreen").style.display = "flex";
@@ -183,8 +186,24 @@
   .conn-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;}
   .conn-dot.on{background:#22c55e;box-shadow:0 0 6px #22c55e;}
   .conn-dot.off{background:#ef4444;}
-  /* 설정 안내 배너 */
-  #setupBanner{background:#1a1000;border:1px solid #f59e0b50;border-radius:12px;padding:20px 24px;margin:20px 24px;display:none;}
+  /* 모바일 메뉴 */
+  .mobile-menu{display:none;position:absolute;top:60px;right:12px;background:#111827;border:1px solid #1e293b;border-radius:12px;padding:8px;z-index:500;flex-direction:column;gap:4px;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.5);}
+  .mobile-menu button{width:100%;text-align:left;padding:8px 12px;border-radius:8px;font-size:13px;background:transparent;border:none;}
+  .mobile-menu button:hover{background:#1e293b;}
+  .hamburger{display:none;background:#1e293b;border:1px solid #334155;color:#e2e8f0;padding:6px 10px;border-radius:8px;font-size:16px;cursor:pointer;}
+  .desktop-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  @media(max-width:768px){
+    header{padding:10px 14px;}
+    .desktop-btns{display:none;}
+    .hamburger{display:block;}
+    .view-toggle .vt-btn{padding:5px 8px;font-size:11px;}
+    main{padding:12px 12px;}
+    .filters{padding:8px 12px;}
+    .stats-bar{padding:8px 12px;}
+    .board-wrap{grid-template-columns:1fr;}
+    .subj-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));}
+    .form-grid{grid-template-columns:1fr;}
+  }
 </style>
 </head>
 <body>
@@ -283,18 +302,35 @@
       </div>
     </div>
   </div>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+  <div style="display:flex;gap:8px;align-items:center;">
     <div class="view-toggle">
-      <button class="vt-btn active" id="btn-board"  onclick="switchView('board')">📋 보드</button>
-      <button class="vt-btn"        id="btn-table"  onclick="switchView('table')">📊 테이블</button>
+      <button class="vt-btn active" id="btn-board" onclick="switchView('board')">📋 보드</button>
+      <button class="vt-btn" id="btn-table" onclick="switchView('table')">📊 테이블</button>
     </div>
-    <button class="btn-export" onclick="exportCSV()">⬇ CSV</button>
-    <button onclick="exportJSON()" style="background:#0f2d1f;color:#22c55e;border:1px solid #14532d;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">💾 백업</button>
-    <button onclick="openTrash()" style="background:#1a0a0a;color:#f87171;border:1px solid #7f1d1d;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">🗑️ 휴지통</button>
-    <button onclick="openSubjectModal()" style="background:#0f1f3d;color:#60a5fa;border:1px solid #1e3a5f;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">📚 과목 관리</button>
-    <button onclick="document.getElementById('firebaseModal').style.display='flex'" style="background:#1a1000;color:#f59e0b;border:1px solid #f59e0b50;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">⚙️ Firebase 설정</button>
-    <div id="userInfo" style="display:flex;align-items:center;gap:8px;padding:4px 12px;background:#111827;border:1px solid #1e293b;border-radius:8px;"></div>
+    <!-- 데스크탑 버튼들 -->
+    <div class="desktop-btns">
+      <button class="btn-export" onclick="exportCSV()">⬇ CSV</button>
+      <button onclick="exportJSON()" style="background:#0f2d1f;color:#22c55e;border:1px solid #14532d;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">💾 백업</button>
+      <button onclick="openTrash()" style="background:#1a0a0a;color:#f87171;border:1px solid #7f1d1d;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">🗑️ 휴지통</button>
+      <button onclick="openSubjectModal()" style="background:#0f1f3d;color:#60a5fa;border:1px solid #1e3a5f;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">📚 과목 관리</button>
+      <button onclick="document.getElementById('firebaseModal').style.display='flex'" style="background:#1a1000;color:#f59e0b;border:1px solid #f59e0b50;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">⚙️ Firebase 설정</button>
+      <div id="userInfo" style="display:flex;align-items:center;gap:8px;padding:4px 12px;background:#111827;border:1px solid #1e293b;border-radius:8px;"></div>
+    </div>
     <button class="btn-primary" onclick="openForm()">+ 강사 추가</button>
+    <!-- 모바일 햄버거 -->
+    <button class="hamburger" onclick="toggleMobileMenu()">☰</button>
+  </div>
+  <!-- 모바일 드롭다운 메뉴 -->
+  <div class="mobile-menu" id="mobileMenu">
+    <div id="mobileUserInfo" style="padding:8px 12px;border-bottom:1px solid #1e293b;margin-bottom:4px;font-size:12px;color:#94a3b8;"></div>
+    <button onclick="exportCSV();toggleMobileMenu()" style="color:#22c55e;">⬇ CSV 내보내기</button>
+    <button onclick="exportJSON();toggleMobileMenu()" style="color:#22c55e;">💾 데이터 백업</button>
+    <button onclick="openTrash();toggleMobileMenu()" style="color:#f87171;">🗑️ 휴지통</button>
+    <button onclick="openSubjectModal();toggleMobileMenu()" style="color:#60a5fa;">📚 과목 관리</button>
+    <button onclick="document.getElementById('firebaseModal').style.display='flex';toggleMobileMenu()" style="color:#f59e0b;">⚙️ Firebase 설정</button>
+    <div style="border-top:1px solid #1e293b;margin-top:4px;padding-top:4px;">
+      <button onclick="googleLogout()" style="color:#ef4444;">🚪 로그아웃</button>
+    </div>
   </div>
 </header>
 
@@ -578,20 +614,23 @@ function renderBoard() {
     items.forEach(item=>{
       const pc=PRIORITY_CFG[item.priority]||"#64748b";
       const others=Object.keys(STATUS_CFG).filter(s=>s!==status).slice(0,3);
-      col+=`<div class="card instr-card animate-in" onclick="openEdit('${item.id}')" style="margin-bottom:8px;">
+      col+=`<div class="card instr-card animate-in" onclick="openEdit('${item.id}')" style="margin-bottom:8px;border-left:3px solid ${cfg.color};padding-left:11px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
           <div>
             <div style="font-size:14px;font-weight:700;color:#f1f5f9;">${item.name||""}</div>
             <div style="font-size:11px;color:var(--dim);margin-top:2px;">${item.subject||""}</div>
           </div>
-          <span class="tag" style="background:${pc}20;color:${pc};">${item.priority||"보통"}</span>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <span class="tag" style="background:${pc}20;color:${pc};">${item.priority||"보통"}</span>
+            <span style="font-size:10px;font-weight:700;color:${cfg.color};background:${cfg.bg};padding:2px 7px;border-radius:6px;">${cfg.icon} ${status}</span>
+          </div>
         </div>
         ${item.phone?`<div style="font-size:11px;color:#475569;margin-bottom:3px;">📞 ${item.phone}</div>`:""}
         ${item.contact?`<div style="font-size:11px;color:#475569;margin-bottom:6px;">👤 ${item.contact}</div>`:""}
         ${item.memo?`<div style="font-size:11px;color:var(--dim);background:var(--bg);padding:5px 8px;border-radius:6px;margin-bottom:8px;">${item.memo.length>32?item.memo.slice(0,32)+"…":item.memo}</div>`:""}
         ${item.lastModifiedBy?`<div style="font-size:10px;color:#334155;margin-bottom:6px;">✏️ ${item.lastModifiedBy} · ${item.lastModifiedAt||""}</div>`:""}
         <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;" onclick="event.stopPropagation();">
-          ${others.map(s=>`<button class="btn-ghost" onclick="event.stopPropagation();updateStatus('${item.id}','${s}')" style="font-size:10px;padding:2px 6px;">${STATUS_CFG[s].icon} ${s}</button>`).join("")}
+          ${others.map(s=>`<button class="btn-ghost" onclick="event.stopPropagation();updateStatus('${item.id}','${s}')" style="font-size:10px;padding:2px 6px;color:${STATUS_CFG[s].color};border-color:${STATUS_CFG[s].color}30;">${STATUS_CFG[s].icon} ${s}</button>`).join("")}
           <button onclick="event.stopPropagation();openDelete('${item.id}')" style="margin-left:auto;background:#2d0a0a;color:#f87171;border:1px solid #7f1d1d;font-size:11px;padding:3px 8px;border-radius:5px;font-weight:600;">삭제</button>
         </div>
       </div>`;
@@ -981,7 +1020,18 @@ function deleteSubject(idx){
 }
 
 populateFormSelects();
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeForm();closeDelete();document.getElementById("subjectModal").style.display="none";}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeForm();closeDelete();document.getElementById("subjectModal").style.display="none";document.getElementById("mobileMenu").style.display="none";}});
+
+function toggleMobileMenu(){
+  const menu=document.getElementById("mobileMenu");
+  menu.style.display=menu.style.display==="flex"?"none":"flex";
+}
+document.addEventListener("click",e=>{
+  const menu=document.getElementById("mobileMenu");
+  if(menu&&!menu.contains(e.target)&&!e.target.closest(".hamburger")){
+    menu.style.display="none";
+  }
+});
 </script>
 </div><!-- /appScreen -->
 </body>
