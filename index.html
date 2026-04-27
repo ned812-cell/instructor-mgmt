@@ -70,6 +70,9 @@
     document.getElementById("workerModal").style.display = "none";
     document.getElementById("appScreen").style.display = "flex";
     document.getElementById("workerBadge").textContent = name;
+    // 모바일 메뉴 유저 이름도 업데이트
+    const mobileUserInfo = document.getElementById("mobileUserInfo");
+    if(mobileUserInfo) mobileUserInfo.textContent = `👤 ${name}`;
     window._appReady = true;
     if(window._instructors) window.render();
   };
@@ -208,44 +211,6 @@
 </head>
 <body>
 
-<!-- 설정 안내 배너 (Firebase 미설정시 표시) -->
-<div id="setupBanner">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-    <span style="font-size:22px;">⚙️</span>
-    <span style="font-size:15px;font-weight:700;color:#f59e0b;">Firebase 설정이 필요합니다</span>
-  </div>
-  <div style="font-size:13px;color:#94a3b8;line-height:1.8;">
-    이 파일을 열면 <b style="color:#f1f5f9;">실시간 공유 기능</b>이 작동합니다.<br>
-    아래 <b style="color:#f1f5f9;">3단계</b>만 따라하시면 팀원 모두가 같은 데이터를 실시간으로 볼 수 있어요.
-  </div>
-  <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px;">
-    <div style="background:#0a0f1a;border:1px solid #1e293b;border-radius:8px;padding:12px 16px;">
-      <div style="font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:4px;">STEP 1 — Firebase 프로젝트 만들기</div>
-      <div style="font-size:12px;color:#64748b;">
-        <a href="https://console.firebase.google.com" target="_blank" style="color:#60a5fa;">console.firebase.google.com</a> 접속 →
-        [프로젝트 추가] → 프로젝트 이름 입력 → [계속] → 완료
-      </div>
-    </div>
-    <div style="background:#0a0f1a;border:1px solid #1e293b;border-radius:8px;padding:12px 16px;">
-      <div style="font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:4px;">STEP 2 — Realtime Database 생성</div>
-      <div style="font-size:12px;color:#64748b;">
-        왼쪽 메뉴 [빌드] → [Realtime Database] → [데이터베이스 만들기] →
-        위치: <b style="color:#94a3b8;">asia-southeast1</b> 선택 → 테스트 모드로 시작
-      </div>
-    </div>
-    <div style="background:#0a0f1a;border:1px solid #1e293b;border-radius:8px;padding:12px 16px;">
-      <div style="font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:4px;">STEP 3 — 설정값 이 파일에 붙여넣기</div>
-      <div style="font-size:12px;color:#64748b;">
-        프로젝트 설정(⚙️) → [일반] → [내 앱] → 웹앱 추가(</>) →
-        <b style="color:#94a3b8;">firebaseConfig</b> 복사 →
-        이 HTML 파일 상단 <b style="color:#94a3b8;">firebaseConfig</b> 부분에 붙여넣기 → 저장
-      </div>
-    </div>
-  </div>
-  <div style="margin-top:14px;padding:10px 14px;background:#0f1f3d;border-radius:8px;border:1px solid #1e3a5f;">
-    <div style="font-size:11px;color:#60a5fa;">💡 완료 후 이 파일을 팀원에게 공유하면 모두 같은 DB를 실시간으로 사용!</div>
-  </div>
-</div>
 
 <!-- 이름 선택 모달 -->
 <div id="workerModal" style="display:none;position:fixed;inset:0;background:#0a0f1a;align-items:center;justify-content:center;z-index:998;flex-direction:column;">
@@ -257,17 +222,17 @@
       <button onclick="selectWorker('백기웅')" style="background:#111827;border:1px solid #1e293b;color:#e2e8f0;padding:16px 28px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all .15s;"
         onmouseover="this.style.background='#1e3a5f';this.style.borderColor='#3b82f6';this.style.color='#60a5fa'"
         onmouseout="this.style.background='#111827';this.style.borderColor='#1e293b';this.style.color='#e2e8f0'">
-        👤 백기웅
+        👨 백기웅
       </button>
       <button onclick="selectWorker('윤소라')" style="background:#111827;border:1px solid #1e293b;color:#e2e8f0;padding:16px 28px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all .15s;"
         onmouseover="this.style.background='#1e3a5f';this.style.borderColor='#3b82f6';this.style.color='#60a5fa'"
         onmouseout="this.style.background='#111827';this.style.borderColor='#1e293b';this.style.color='#e2e8f0'">
-        👤 윤소라
+        👩 윤소라
       </button>
       <button onclick="selectWorker('김영균')" style="background:#111827;border:1px solid #1e293b;color:#e2e8f0;padding:16px 28px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all .15s;"
         onmouseover="this.style.background='#1e3a5f';this.style.borderColor='#3b82f6';this.style.color='#60a5fa'"
         onmouseout="this.style.background='#111827';this.style.borderColor='#1e293b';this.style.color='#e2e8f0'">
-        👤 김영균
+        👨 김영균
       </button>
     </div>
   </div>
@@ -558,7 +523,7 @@ function renderStats() {
   if(!bar) return;
   let html="";
   Object.entries(STATUS_CFG).forEach(([s,c])=>{
-    const cnt = gi().filter(i=>i.status===s).length;
+    const cnt = gi().filter(i=>!i.deleted&&i.status===s).length;
     const active = filterStatus===s;
     html+=`<div class="stat-chip" onclick="toggleStatusFilter('${s}')"
       style="background:${active?c.bg:"var(--card)"};border-color:${active?c.color+"60":"var(--border)"};">
@@ -569,7 +534,7 @@ function renderStats() {
   });
   html+=`<div style="margin-left:auto;display:flex;align-items:center;gap:5px;flex-shrink:0;padding:0 8px;">
     <span style="font-size:12px;color:var(--dim);">전체</span>
-    <span style="font-size:18px;font-weight:700;color:#f1f5f9;font-family:'Space Mono',monospace;">${gi().length}</span>
+    <span style="font-size:18px;font-weight:700;color:#f1f5f9;font-family:'Space Mono',monospace;">${gi().filter(i=>!i.deleted).length}</span>
     <span style="font-size:12px;color:var(--dim);">명</span>
   </div>`;
   bar.innerHTML=html;
@@ -590,8 +555,8 @@ function renderBoard() {
   const list=filtered();
   let subjHtml=`<div class="subj-grid">`;
   SUBJECTS.forEach(s=>{
-    const total=gi().filter(i=>i.subject===s).length;
-    const done=gi().filter(i=>i.subject===s&&i.status==="섭외완료").length;
+    const total=gi().filter(i=>!i.deleted&&i.subject===s).length;
+    const done=gi().filter(i=>!i.deleted&&i.subject===s&&i.status==="섭외완료").length;
     const pct=total>0?Math.round((done/total)*100):0;
     subjHtml+=`<div class="card" style="padding:12px 14px;">
       <div style="font-size:11px;color:var(--dim);font-weight:600;margin-bottom:7px;">${s}</div>
